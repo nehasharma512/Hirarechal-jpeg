@@ -1,9 +1,4 @@
-function [videoEncoder]=ForwardTransform(frame,QP)
-
-%Integer Transform 
- frameY = frame.Y; 
- frameU = frame.U; 
- frameV = frame.V;
+function [videoEncoder] = ForwardTransform(frame,QP)
 
 %Integer transform matrix
 C=[1,1,1,1;
@@ -22,38 +17,30 @@ m=[13107,5243,8066;
 
 %Quantization Matrix
 if QP < 6
-    M =[m(QP,0),m(QP,2),m(QP,0),m(QP,2);
-        m(QP,2),m(QP,1),m(QP,2),m(QP,1);
-        m(QP,0),m(QP,2),m(QP,0),m(QP,2);
-        m(QP,2),m(QP,1),m(QP,2),m(QP,1)];
+    M =[m(QP,1),m(QP,3),m(QP,1),m(QP,3);
+        m(QP,3),m(QP,2),m(QP,3),m(QP,2);
+        m(QP,1),m(QP,3),m(QP,1),m(QP,3);
+        m(QP,3),m(QP,2),m(QP,3),m(QP,2)];
 else
     p = mod(QP,6);
-    q = pow(2,floor(QP/6));
-    M =[m(p,0)/q,m(p,2)/q,m(p,0)/q,m(p,2)/q;
-        m(p,2)/q,m(p,1)/q,m(p,2)/q,m(p,1)/q;
-        m(p,0)/q,m(p,2)/q,m(p,0)/q,m(p,2)/q;
-        m(p,2)/q,m(p,1)/q,m(p,2)/q,m(p,1)/q]; 
+    q = 2^(floor(QP/6));
+    M =[m(p,1)/q,m(p,3)/q,m(p,1)/q,m(p,3)/q;
+        m(p,3)/q,m(p,2)/q,m(p,3)/q,m(p,2)/q;
+        m(p,1)/q,m(p,3)/q,m(p,1)/q,m(p,3)/q;
+        m(p,3)/q,m(p,2)/q,m(p,3)/q,m(p,2)/q]; 
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % perform Integer Transfrom on each 4x4 block
-frameTrY = blockproc(frameY,[4 4],'integerTransform',C);
-frameTrU = blockproc(frameU,[4 4],'integerTransform',C);
-frameTrV = blockproc(frameV,[4 4],'integerTransform',C);
+frameTr = integerTransform(frame,C);
 
 % apply quantization
-quantizedY = blockproc(frameTrY,[4 4],'amulb',M);
-quantizedU = blockproc(frameTrU,[4 4],'amulb',M);
-quantizedV = blockproc(frameTrV,[4 4],'amulb',M);
+quantized = amulb(frameTr,M);
 
 % apply scaling swift by 15 bits
-scaledY = round(quantizedY/pow(2,15));
-scaledU = round(quantizedU/pow(2,15));
-scaledV = round(quantizedV/pow(2,15));
+scaled = round(quantized/2^15);
     
-
-    
-videoEncoder = struct('Y',scaledY,'U',scaledU,'V',scaledV);	
+videoEncoder = scaled;	
     
     
 
