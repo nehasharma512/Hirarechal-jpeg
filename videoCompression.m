@@ -2,7 +2,7 @@ function videoCompression()
 vid = readVideo();
 
 encodedVideo = encodeVideo(vid);
-
+save mpeg encodedVideo
 decodedVideo = decodeVideo(encodedVideo);
 
 end
