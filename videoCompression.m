@@ -1,8 +1,13 @@
+
+
 function videoCompression()
+clear all;
+clc;
+close all;
 vid = readVideo();
 
 encodedVideo = encodeVideo(vid);
-save mpeg encodedVideo
+
 decodedVideo = decodeVideo(encodedVideo);
 
 end
@@ -10,11 +15,12 @@ end
 function encodedVideo =  encodeVideo(vid)
 
 % Frame type pattern (repeats for entire video)
+%fpat = 'IBBP';
 fpat = 'IPPP';
 % Loop over frames
 k = 0;
 pf = [];
-for i = 1:10%vid.NumberOfFrames
+for i = 1:12%vid.NumberOfFrames
     
     % Get frame
     f = read(vid,i);
@@ -38,7 +44,8 @@ function [mpeg,df] = encodeFrame(f,ftype,pf)
 
 [M,N,i] = size(f);
 mbsize = [M, N] / 16;
-mpeg = struct('type',[],'mvx',[],'mvy',[],'scale',[],'coef',[]);
+mpeg = struct('type',[],'mvx',[],'mvy',[],'scale',[],'coef',[],'modes',[]);
+
 mpeg(mbsize(1),mbsize(2)).type = [];
 
 % Loop over macroblocks
@@ -65,10 +72,19 @@ QP = 5;
 mpeg.type = 'I';
 mpeg.mvx = 0;
 mpeg.mvy = 0;
+mpeg.modes = zeros(4,4,3);
 
-% intra coding of I frame
+
+%intra coding of I frame
 if ftype == 'I'
     % add code from intra_coding file
+    [diff_struct]=intra_coding(mb);
+    %for the decoded blk: diff_struct.diff_blk
+    %for the intra modes: diff_struct.intra_modes
+    %mpeg.mb = diff_struct.diff_blk;
+    mpeg.modes = diff_struct.intra_modes;
+    mb = diff_struct.diff_blk;
+    
 end
 
 % Find motion vectors
@@ -88,6 +104,8 @@ end
 
 % Decode this macroblock for reference by a future P frame
 decodedMacroblock = decodeMacroblock(mpeg,pf,x,y);
+
+
 end
 
 
@@ -183,7 +201,9 @@ mb = mb + putblocks(b);
 
 % Intra decoding of macroblock for I frame
 if mpeg.type == 'I'
-    % add code from intra_decoding file  
+    % add code from intra_decoding file 
+    mb =intra_decoding(mb,mpeg.modes);
+    
 end
 
 end
